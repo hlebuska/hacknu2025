@@ -84,10 +84,19 @@ async def match_resume_to_requirements(
     max_tokens: int = 600,
 ) -> Dict[str, Any] | Dict[str, str]:
     """
-    Call OpenAI to compute matching sections and a fit score.
+    You are a an expert resume analyzer. Follow instructions precisely.
+    you are given job requirements and resume text, and must return a JSON object with:
 
-    Returns either a dict with keys MATCHING_SECTIONS and FIT_SCORE, or a dict with an 'error' key on failure.
-    """
+    for each requirement you need to return a json property that has the following fields:
+    {
+    vacancy_req: <job requirement string>,
+    user_req_data: <extracted matching resume sections>,
+    fit_score: <integer score 0-100>
+    }
+
+    in the end you should have a json file with multiple such properties.
+
+      """
     if not settings.openai_client or not settings.openai_api_key:
         return {"error": "OPENAI_API_KEY is not configured on the server."}
 
