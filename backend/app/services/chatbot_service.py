@@ -3,8 +3,9 @@ Chatbot service that integrates resume-vacancy analysis and conversation managem
 """
 import json
 from typing import Optional, List, Dict, Any
+from pydantic import SecretStr
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import Chroma
 from app.models.application import Application
 from app.models.vacancy import Vacancy
@@ -16,8 +17,9 @@ class ChatbotService:
     """Main chatbot service for handling AI conversations and analysis"""
     
     def __init__(self):
-        self.model = ChatOpenAI(api_key=settings.openai_api_key)
-        self.embeddings = OpenAIEmbeddings(api_key=settings.openai_api_key)
+        api_key = SecretStr(settings.openai_api_key) if settings.openai_api_key else None
+        self.model = ChatOpenAI(api_key=api_key)
+        self.embeddings = OpenAIEmbeddings(api_key=api_key)
         self.chroma_path = os.getenv("CHROMA_PATH", "chroma")
     
     def analyze_resume_vacancy_differences(
@@ -143,7 +145,8 @@ Your questions:
         )
         
         response = self.model.invoke(prompt)
-        return response.content if hasattr(response, 'content') else str(response)
+        content = response.content if hasattr(response, 'content') else str(response)
+        return str(content) if isinstance(content, (list, dict)) else content
     
     def chat_with_context(
         self, 
@@ -184,7 +187,8 @@ Your questions:
         ]
         
         response = self.model.invoke(messages)
-        return response.content if hasattr(response, 'content') else str(response)
+        content = response.content if hasattr(response, 'content') else str(response)
+        return str(content) if isinstance(content, (list, dict)) else content
     
     def query_knowledge_base(self, query: str, k: int = 3) -> Dict[str, Any]:
         """
