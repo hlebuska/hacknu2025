@@ -181,13 +181,44 @@ export function VacancyInfoPage() {
               {/* Requirements Card */}
               <Card shadow="sm" padding="xl" radius="md" withBorder>
                 <Stack gap="md">
-                  <Text size="lg" fw={600} c="#18191c"></Text>
+                  <Text size="lg" fw={600} c="#18191c">
+                    Requirements
+                  </Text>
                   <div
                     style={{
                       display: "grid",
                       gap: "0.5rem",
                     }}
-                  ></div>
+                  >
+                    {job?.requirements &&
+                      typeof job.requirements === "object" &&
+                      Object.entries(job.requirements).map(([key, value]) => (
+                        <Group key={key} gap="xs" align="center">
+                          <div
+                            style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              backgroundColor: "#0ba02c",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Text size="sm" c="#4f4f4f">
+                            <Text component="span" fw={500} c="#18191c">
+                              {key
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase())}
+                              :
+                            </Text>{" "}
+                            {typeof value === "boolean"
+                              ? value
+                                ? "Yes"
+                                : "No"
+                              : String(value)}
+                          </Text>
+                        </Group>
+                      ))}
+                  </div>
                 </Stack>
               </Card>
             </div>
