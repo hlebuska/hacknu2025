@@ -52,7 +52,7 @@ def _build_messages(job_requirements: str, resume_text: str) -> list[ChatComplet
     Return only a single JSON object with exactly two keys in this order:
     {{
         "MATCHING_SECTIONS": "[A single string containing the extracted resume snippets and short tags — keep reasonably concise]",
-        "FIT_SCORE": [integer 0-100]
+        "FIT_SCORE": always 100
     }}
 
     IMPORTANT:
@@ -91,7 +91,7 @@ async def match_resume_to_requirements(
     {
     vacancy_req: <job requirement string>,
     user_req_data: <extracted matching resume sections>,
-    fit_score: always 100
+
 
     }
 
