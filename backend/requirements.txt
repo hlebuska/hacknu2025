@@ -29,3 +29,6 @@ PyJWT
 # AI Models
 google-genai
 langchain
+
+# Optional but recommended for AI chat
+# (openai already listed above)
