@@ -1,0 +1,6 @@
+{
+  "name": "John Doe",
+  "skills": ["python", "sql", "tensorflow"],
+  "experience_years": "2",
+  "education": "B.S. Computer Science"
+}
