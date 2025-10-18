@@ -99,12 +99,16 @@ async def match_resume_to_requirements(
     *,
     model: Optional[str] = None,
     temperature: float = 0.0,
-    max_tokens: int = 600,
+    max_tokens: int = 2000,
 ) -> Dict[str, Any] | Dict[str, str]:
     """
-    Call OpenAI to compute matching sections and a fit score.
-
-    Returns either a dict with keys MATCHING_SECTIONS and FIT_SCORE, or a dict with an 'error' key on failure.
+    Match resume against job requirements using OpenAI.
+    
+    Returns a dict with:
+    - On success: {"requirements": [...], "FIT_SCORE": int}
+    - On error: {"error": str, "raw": str (optional)}
+    
+    The full successful response is meant to be stored in Application.matching_sections (JSON field).
     """
     if not settings.openai_client or not settings.openai_api_key:
         return {"error": "OPENAI_API_KEY is not configured on the server."}
@@ -136,11 +140,28 @@ async def match_resume_to_requirements(
         try:
             parsed = json.loads(assistant_text)
         except json.JSONDecodeError:
+            logger.warning(f"Invalid JSON from model: {assistant_text[:200]}...")
             return {"error": "Invalid JSON returned by model", "raw": assistant_text}
 
-        if not ("MATCHING_SECTIONS" in parsed and "FIT_SCORE" in parsed):
-            return {"error": "JSON missing required keys", "raw": assistant_text}
+        # Validate structure: must have "requirements" array and "FIT_SCORE"
+        if not isinstance(parsed, dict):
+            return {"error": "Response is not a JSON object", "raw": assistant_text}
+        
+        if "requirements" not in parsed or "FIT_SCORE" not in parsed:
+            return {"error": "JSON missing 'requirements' or 'FIT_SCORE'", "raw": assistant_text}
+        
+        if not isinstance(parsed["requirements"], list):
+            return {"error": "'requirements' must be an array", "raw": assistant_text}
+        
+        # Validate FIT_SCORE is numeric
+        try:
+            fit_score = float(parsed["FIT_SCORE"])
+            if not (0 <= fit_score <= 100):
+                logger.warning(f"FIT_SCORE out of range: {fit_score}")
+        except (ValueError, TypeError):
+            return {"error": "FIT_SCORE must be a number 0-100", "raw": assistant_text}
 
+        # Valid response - return the full parsed object
         return parsed
     except Exception as e:
         logger.exception("OpenAI API call failed")
