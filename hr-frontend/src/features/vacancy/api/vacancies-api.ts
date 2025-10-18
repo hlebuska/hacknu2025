@@ -4,7 +4,7 @@ const apiAddress = import.meta.env.VITE_API_URL;
 console.log(apiAddress); // "https://mybackend.onrender.com"
 
 const axiosClient = axios.create({
-  baseURL: apiAddress,
+  baseURL: apiAddress + "/api",
   headers: {
     "Content-Type": "application/json",
   },
