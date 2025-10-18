@@ -38,47 +38,74 @@ def _build_messages(job_requirements: str, resume_text: str) -> list[ChatComplet
     Job Requirements: {job_requirements}
     Resume Content: {resume_text}
 
-    PART B — GRADER (Score out of 100, Required):
-    - Assign a single integer score between 0 and 100 representing overall fit (100 = perfect match).
-    - Score composition guidance (use internally to compute the score; you only return the final number):
-      * Core technical skills match (0-40): how many required technical skills are present and proficiently demonstrated.
-      * Relevant experience & seniority (0-25): years and relevancy of work experience to the role.
-      * Tooling / frameworks / cloud experience (0-15): presence of required frameworks or cloud platforms.
-      * Education & certifications (0-10): degrees or certifications directly related to the role.
-      * Soft skills & cultural fit signals (0-10): communication, agile/teamwork signals, leadership where relevant.
-    - Provide the single final integer score only; do NOT include the internal breakdown in the response.
+    You are a precise evaluator. Your goal is to measure how accurately the resume satisfies each job requirement.
 
-    OUTPUT FORMAT (Required — exact JSON ONLY):
-    Return a JSON object with two keys:
+    PART B — SCORING RULES (STRICT):
+
+    1. EXPERIENCE & DURATION:
+    - Identify the start and end years of relevant positions.
+    - Compute duration as of October 2025.
+    - If requirement says "3+ years" and resume shows only ~1 year, assign ≤ 40% match.
+    - Partial matches (e.g. 2 out of 3 years) should get proportional scores (≈ 65%).
+    - If no date or duration is mentioned, assume 0% for experience-based requirements.
+
+    2. LOCATION / REGION:
+    - If the city or country exactly matches → 100%.
+    - If within same country but different city → ≤ 60%.
+    - Different country/region → ≤ 20%.
+    - If remote acceptable but not stated → ≤ 50%.
+
+    3. SKILLS & TECHNOLOGIES:
+    - Match exact skill names (case-insensitive).
+    - If skill appears with clear professional use (e.g. “Developed X using Y”) → 100%.
+    - If only listed in skills section without examples → 70%.
+    - Mentioned vaguely (e.g. “familiar with”) → ≤ 40%.
+    - Not found → 0%.
+
+    4. EDUCATION / CERTIFICATIONS:
+    - Match exact degree field or certification name.
+    - Related field but not exact → ≤ 70%.
+    - Different or missing → ≤ 30%.
+
+    5. SOFT SKILLS & COMMUNICATION:
+    - Only consider explicitly shown evidence (e.g. “Led a team”, “collaborated”, “mentored”).
+    - No evidence → 0%.
+
+    6. TOOLS / FRAMEWORKS / CLOUD:
+    - Apply same scoring as skills, but weigh multiple tools separately.
+
+    PART C — OUTPUT FORMAT (STRICT JSON):
+    Return only a valid JSON object with:
     - "requirements": an array where each element has:
-    * "vacancy_req": the specific job requirement (string)
-    * "user_req_data": extracted resume text that demonstrates this requirement (string, empty if no match)
-    * "match_percent": percentage match for this requirement (0-100 integer)
-    - "FIT_SCORE": overall fit score (0-100 integer)
+        * "vacancy_req": (string) job requirement
+        * "user_req_data": (string) matched resume text (empty if none)
+        * "match_percent": integer 0–100
+    - "FIT_SCORE": integer 0–100 (overall weighted average)
 
-    You can internally calculate the experince based on current date (oct 2025) and the dates mentioned in the resume.
-
-    Example structure:
+    Example:
     {{
     "requirements": [
         {{
-        "vacancy_req": "3+ years Python experience",
-        "user_req_data": "Skills: Python\\nExperience: 5 years as Python Developer at XYZ Corp",
-        "match_percent": 95
+        "vacancy_req": "location: Almaty, Kazakhstan",
+        "user_req_data": "Astana, Kazakhstan",
+        "match_percent": 50
         }},
         {{
-        "vacancy_req": "Machine Learning frameworks (TensorFlow/PyTorch)",
-        "user_req_data": "Skills: TensorFlow, PyTorch\\nProjects: Built ML models for predictive analytics",
-        "match_percent": 85
+        "vacancy_req": "Experience in React: > 3 years",
+        "user_req_data": "Developed client app using React (2023–2024)",
+        "match_percent": 40
         }}
     ],
-    "FIT_SCORE": 88
+    "FIT_SCORE": 55
     }}
 
-    IMPORTANT:
-    - The model must output valid JSON only. No extra text, no surrounding backticks, and no explanatory notes.
-    - If a required field is missing in the resume, include an empty string for MATCHING_SECTIONS and score appropriately.
+    STRICT INSTRUCTIONS:
+    - Do NOT infer missing details.
+    - If duration or skill usage is unclear, reduce score significantly (≤ 40%).
+    - Use October 2025 as current date when calculating experience.
+    - Output valid JSON only — no comments, no text outside the JSON.
     """
+
 
     messages: list[ChatCompletionMessageParam] = [
         {
