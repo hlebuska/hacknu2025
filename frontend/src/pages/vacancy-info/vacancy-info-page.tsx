@@ -174,11 +174,9 @@ export function VacancyInfoPage() {
                   <Text size="lg" fw={600} c="#18191c">
                     Job Description
                   </Text>
-                  <Text
-                    size="sm"
-                    c="#4f4f4f"
-                    style={{ lineHeight: 1.6 }}
-                  ></Text>
+                  <Text size="sm" c="#4f4f4f" style={{ lineHeight: 1.6 }}>
+                    {job.description}
+                  </Text>
                 </Stack>
               </Card>
 
