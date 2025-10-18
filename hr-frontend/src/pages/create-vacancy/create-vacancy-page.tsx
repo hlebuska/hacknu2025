@@ -22,14 +22,15 @@ import {
 } from "lucide-react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import { useCreateVacancy } from "../../features/vacancies/api/use-create-vacancy";
 
 const vacancySchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(50).max(2000),
   company: z.string().min(2).max(100),
   location: z.string().min(2).max(100),
-  salary_min: z.number().min(0).max(1000000),
-  salary_max: z.number().min(0).max(1000000),
+  salary_min: z.number().min(0).max(10000000),
+  salary_max: z.number().min(0).max(10000000),
   employment_type: z.enum(["full-time", "part-time"]),
   requirements: z
     .array(
@@ -44,6 +45,8 @@ const vacancySchema = z.object({
 type VacancyFormData = z.infer<typeof vacancySchema>;
 
 export default function CreateVacancyPage() {
+  const createVacancyMutation = useCreateVacancy();
+
   const {
     control,
     handleSubmit,
@@ -69,8 +72,25 @@ export default function CreateVacancyPage() {
   });
 
   const onFormSubmit = (data: VacancyFormData) => {
-    console.log("Vacancy created:", data);
-    reset();
+    // Add location to requirements before submission
+    const submissionData = {
+      ...data,
+      requirements: {
+        location: data.location,
+        ...data.requirements.reduce((acc, req) => {
+          acc[req.title] = req.description;
+          return acc;
+        }, {} as Record<string, string>),
+      },
+    };
+
+    // Use the mutation to create vacancy
+    createVacancyMutation.mutate(submissionData, {
+      onSuccess: () => {
+        console.log("Vacancy created successfully!");
+        reset();
+      },
+    });
   };
 
   return (

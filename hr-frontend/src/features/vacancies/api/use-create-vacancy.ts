@@ -1,11 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import type { Job } from "../../vacancy/model/types";
 import { createVacancy } from "../../vacancy/api/vacancies-api";
 
 export const useCreateVacancy = () => {
   return useMutation({
-    mutationFn: (vacancyData: Omit<Job, "id" | "created_at" | "updated_at">) =>
-      createVacancy(vacancyData),
+    mutationFn: (vacancyData: any) => createVacancy(vacancyData),
     onSuccess: () => {
       console.log("Vacancy created successfully!");
     },
