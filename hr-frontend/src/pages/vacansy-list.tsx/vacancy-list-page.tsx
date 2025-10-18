@@ -1,4 +1,4 @@
-import { Container, Loader, Stack, Text } from "@mantine/core";
+import { Button, Container, Loader, Stack, Text } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -96,6 +96,18 @@ export default function VacanciesPage() {
             )
           )}
         </main>
+        <Button
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            maxWidth: "200px",
+            margin: "0 auto 2rem auto",
+          }}
+          onClick={() => navigate("/create")}
+        >
+          Post a Job
+        </Button>
       </div>
     </Container>
   );

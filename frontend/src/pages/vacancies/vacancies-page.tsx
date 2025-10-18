@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router";
 import { getVacancies } from "../../features/vacancies/api/vacancies-api";
+import type { Job } from "../../features/vacancies/model/types";
 import { Header } from "../../features/vacancies/ui/header";
 import { JobCard } from "../../features/vacancies/ui/job-card";
-import type { Job } from "../../features/vacancies/model/types";
 
 export default function VacanciesPage() {
   const navigate = useNavigate();
