@@ -33,17 +33,6 @@ export default function VacanciesPage() {
         <Header />
 
         <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h1 className="mb-4 text-5xl font-bold tracking-tight text-foreground">
-              Find Your Next Opportunity
-            </h1>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
-              Discover amazing career opportunities at leading tech companies.
-              Browse our curated list of positions and take the next step in
-              your career.
-            </p>
-          </div>
-
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">
               Latest Positions

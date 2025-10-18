@@ -30,17 +30,6 @@ export default function VacanciesPage() {
     <Container style={{ minHeight: "100vh" }}>
       <div className="min-h-screen bg-background">
         <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h1 className="mb-4 text-5xl font-bold tracking-tight text-foreground">
-              Find Your Next Opportunity
-            </h1>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
-              Discover amazing career opportunities at leading tech companies.
-              Browse our curated list of positions and take the next step in
-              your career.
-            </p>
-          </div>
-
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">
               Latest Positions
@@ -80,9 +69,9 @@ export default function VacanciesPage() {
               </Stack>
             </div>
           )}
-          {jobsData.length > 0 ? (
+          {jobsData.length > 0 && jobsData ? (
             <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 ">
-              {jobsData.map((job: Job) => (
+              {jobsData?.map((job: Job) => (
                 <JobCard
                   key={job.id}
                   title={job.title}
