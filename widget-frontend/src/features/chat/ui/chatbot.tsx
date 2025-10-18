@@ -35,15 +35,32 @@ export function Chatbot({ applicationId }: ChatbotProps) {
     ws.onmessage = (event) => {
       const responseText = event.data;
       if (responseText !== "connected") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            content: responseText,
-            role: "assistant",
-            timestamp: new Date(),
-          },
-        ]);
+        try {
+          // Try to parse as JSON first
+          const parsed = JSON.parse(responseText);
+          const content = parsed.content || parsed.message || responseText;
+          
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              content: content,
+              role: "assistant",
+              timestamp: new Date(),
+            },
+          ]);
+        } catch {
+          // If not JSON, use as plain text
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              content: responseText,
+              role: "assistant",
+              timestamp: new Date(),
+            },
+          ]);
+        }
       }
     };
 
