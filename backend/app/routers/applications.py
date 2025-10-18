@@ -11,6 +11,7 @@ from app.db.session import async_session
 from app.utils.file_upload import save_uploaded_file
 from pathlib import Path
 from app.services_pdf.pdf_parser import PDFParserService
+from app.services_pdf.resume_matcher import match_resume_to_requirements
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ async def submit_application(
     await session.commit()
     await session.refresh(application)
     
-    # After successful resume upload, try to analyze if vacancy has requirements
+    # Try to analyze resume vs job requirements (best-effort; non-blocking on errors)
     try:
         # Build requirements text
         reqs = vacancy.requirements
@@ -98,27 +99,29 @@ async def submit_application(
             parser = PDFParserService()
             extracted_text, _meta = parser.extract_text_from_pdf(pdf_bytes)
             if extracted_text:
-                from app.services_pdf.resume_matcher import match_resume_to_requirements
-                
                 result = await match_resume_to_requirements(
-                    job_requirements=requirements_text,
-                    resume_text=extracted_text
+                    job_requirements=job_requirements_text,
+                    resume_text=extracted_text,
+                    model="gpt-4o-mini",
                 )
-                
-                if "error" not in result:
-                    # Extract FIT_SCORE for matching_score field
-                    try:
-                        fit_score = float(result.get("FIT_SCORE", 0))
-                        application.matching_score = fit_score
-                    except (ValueError, TypeError):
-                        logger.warning(f"Could not parse FIT_SCORE from result: {result}")
-                    
-                    # Store the entire result in matching_sections
+                if isinstance(result, dict) and not result.get("error"):
+                    # Update application with analysis
+                    fit_raw = result.get("FIT_SCORE")
+                    score_val = None
+                    if isinstance(fit_raw, (int, float)):
+                        score_val = float(fit_raw)
+                    elif isinstance(fit_raw, str):
+                        try:
+                            score_val = float(fit_raw.strip())
+                        except Exception:
+                            score_val = None
+                    application.matching_score = score_val
+                    # Store the full result (with requirements array) in matching_sections
                     application.matching_sections = result
-                    
+                    session.add(application)
                     await session.commit()
                     await session.refresh(application)
-                    logger.info(f"✅ Resume analyzed: FIT_SCORE={fit_score}")
+                    logger.info(f"✅ Resume analyzed: FIT_SCORE={score_val}")
                 else:
                     logger.warning(f"Resume matching failed or invalid response: {result}")
             else:
