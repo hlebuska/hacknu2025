@@ -51,8 +51,7 @@ export function Chatbot({
   }, [sessionId, conversationId]);
 
   const connectWebSocket = () => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}${apiConfig.endpoints.chatWs}/${sessionId}`;
+    const wsUrl = `${apiConfig.wsUrl}/api/v1/chat/ws/${sessionId}`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
