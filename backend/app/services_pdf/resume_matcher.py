@@ -91,10 +91,12 @@ async def match_resume_to_requirements(
     {
     vacancy_req: <job requirement string>,
     user_req_data: <extracted matching resume sections>,
-    fit_score: <integer score 0-100>
+    fit_score: always 100
+
     }
 
     in the end you should have a json file with multiple such properties.
+    you should ru
 
       """
     if not settings.openai_client or not settings.openai_api_key:
