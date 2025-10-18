@@ -26,6 +26,13 @@ taskiq-redis
 # Authentication
 PyJWT
 
-# AI Models
+# AI Models and LLM
 google-genai
 langchain
+langchain-openai
+langchain-community
+chromadb
+
+# Vector Store and Embeddings
+openai
+sentence-transformers
