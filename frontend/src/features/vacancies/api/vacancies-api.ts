@@ -3,7 +3,7 @@ import type { Job } from "../model/types";
 const apiAddress = import.meta.env.VITE_API_URL;
 console.log(apiAddress); // "https://mybackend.onrender.com"
 
-const axiosClient = axios.create({
+export const axiosClient = axios.create({
   baseURL: apiAddress + "/api",
   headers: {
     "Content-Type": "application/json",

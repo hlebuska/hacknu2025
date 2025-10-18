@@ -9,7 +9,7 @@ import {
   Text,
 } from "@mantine/core";
 import "@mantine/core/styles.css";
-import { MoveDiagonal, PinIcon } from "lucide-react";
+import { MoveDiagonal } from "lucide-react";
 
 interface JobCardProps {
   title?: string;

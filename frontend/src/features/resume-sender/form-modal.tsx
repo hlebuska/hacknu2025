@@ -11,8 +11,9 @@ import {
 import { FileText, Mail, Upload, User } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { useSubmitApplication } from "./api/use-submit-application";
 
-// Zod schema for form validation (simplified for essential fields only)
+// Updated schema without phone
 const applicationSchema = z.object({
   firstName: z
     .string()
@@ -50,7 +51,8 @@ interface FormModalProps {
   onClose: () => void;
   jobTitle?: string;
   companyName?: string;
-  onSubmit?: (data: ApplicationFormData) => void;
+  vacancyId: string;
+  onSubmit?: () => void;
 }
 
 export function FormModal({
@@ -58,8 +60,24 @@ export function FormModal({
   onClose,
   jobTitle = "Software Engineer",
   companyName = "TechCorp",
+  vacancyId,
   onSubmit,
 }: FormModalProps) {
+  const handleSuccess = () => {
+    console.log("Application submitted successfully!");
+    onClose();
+    onSubmit && onSubmit();
+  };
+
+  const handleError = (error: any) => {
+    console.error("Failed to submit application:", error);
+  };
+
+  const submitApplicationMutation = useSubmitApplication({
+    onSuccess: handleSuccess,
+    onError: handleError,
+  });
+
   const {
     control,
     handleSubmit,
@@ -77,12 +95,21 @@ export function FormModal({
   });
 
   const onFormSubmit = (data: ApplicationFormData) => {
-    console.log("Application submitted:", data);
-    if (onSubmit) {
-      onSubmit(data);
-    }
-    onClose();
-    reset();
+    const submissionData = {
+      vacancy_id: vacancyId,
+      first_name: data.firstName,
+      last_name: data.lastName,
+      email: data.email,
+      resume: data.resume,
+    };
+
+    submitApplicationMutation.mutate(submissionData, {
+      onSuccess: () => {
+        onClose();
+        reset();
+      },
+    });
+    onSubmit && onSubmit();
   };
 
   const handleClose = () => {
@@ -99,7 +126,7 @@ export function FormModal({
           Apply for {jobTitle} at {companyName}
         </Text>
       }
-      size="50vw"
+      size="xl"
       centered
       overlayProps={{
         backgroundOpacity: 0.55,
@@ -108,83 +135,80 @@ export function FormModal({
     >
       <form onSubmit={handleSubmit(onFormSubmit)}>
         <Stack gap="36px" p="16px">
-          <div className="flex flex-col gap-4">
-            <Text size="md" fw={500} c="#18191c">
+          <div>
+            <Text size="md" fw={500} c="#18191c" mb="md">
               Personal Information
             </Text>
-            <Group
-              grow
-              style={{ flexDirection: "row", alignItems: "flex-start" }}
-            >
-              <Controller
-                name="firstName"
-                control={control}
-                render={({ field }) => (
-                  <TextInput
-                    label="First Name"
-                    placeholder="Enter your first name"
-                    leftSection={<User size={16} />}
-                    error={errors.firstName?.message}
-                    required
-                    {...field}
-                  />
-                )}
-              />
-              <Controller
-                name="lastName"
-                control={control}
-                render={({ field }) => (
-                  <TextInput
-                    label="Last Name"
-                    placeholder="Enter your last name"
-                    leftSection={<User size={16} />}
-                    error={errors.lastName?.message}
-                    required
-                    {...field}
-                  />
-                )}
-              />
-            </Group>
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <TextInput
-                  label="Email Address"
-                  placeholder="your.email@example.com"
-                  leftSection={<Mail size={16} />}
-                  error={errors.email?.message}
-                  required
-                  {...field}
+            <Stack gap="md">
+              <Group grow>
+                <Controller
+                  name="firstName"
+                  control={control}
+                  render={({ field }) => (
+                    <TextInput
+                      label="First Name"
+                      placeholder="Enter your first name"
+                      leftSection={<User size={16} />}
+                      error={errors.firstName?.message}
+                      required
+                      {...field}
+                    />
+                  )}
                 />
-              )}
-            />
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <Text size="md" fw={500} c="#18191c">
-              Professional Information
-            </Text>
-            <Stack gap="sm">
+                <Controller
+                  name="lastName"
+                  control={control}
+                  render={({ field }) => (
+                    <TextInput
+                      label="Last Name"
+                      placeholder="Enter your last name"
+                      leftSection={<User size={16} />}
+                      error={errors.lastName?.message}
+                      required
+                      {...field}
+                    />
+                  )}
+                />
+              </Group>
               <Controller
-                name="resume"
+                name="email"
                 control={control}
-                render={({ field: { onChange, value, ...field } }) => (
-                  <FileInput
-                    size="md"
-                    label="Resume/CV"
-                    placeholder="Upload your resume (PDF, DOC, DOCX)"
-                    leftSection={<FileText size={16} />}
-                    accept=".pdf,.doc,.docx"
-                    error={errors.resume?.message}
+                render={({ field }) => (
+                  <TextInput
+                    label="Email Address"
+                    placeholder="your.email@example.com"
+                    leftSection={<Mail size={16} />}
+                    error={errors.email?.message}
                     required
-                    onChange={onChange}
-                    value={value}
                     {...field}
                   />
                 )}
               />
             </Stack>
+          </div>
+
+          <div>
+            <Text size="md" fw={500} c="#18191c" mb="md">
+              Professional Information
+            </Text>
+            <Controller
+              name="resume"
+              control={control}
+              render={({ field: { onChange, value, ...field } }) => (
+                <FileInput
+                  size="md"
+                  label="Resume/CV"
+                  placeholder="Upload your resume (PDF, DOC, DOCX)"
+                  leftSection={<FileText size={16} />}
+                  accept=".pdf,.doc,.docx"
+                  error={errors.resume?.message}
+                  required
+                  onChange={onChange}
+                  value={value}
+                  {...field}
+                />
+              )}
+            />
           </div>
 
           <Group justify="space-between" mt="xl">
@@ -195,7 +219,7 @@ export function FormModal({
               type="submit"
               size="md"
               leftSection={<Upload size={16} />}
-              //   disabled={!isValid || !isDirty}
+              loading={submitApplicationMutation.isPending}
             >
               Submit Application
             </Button>

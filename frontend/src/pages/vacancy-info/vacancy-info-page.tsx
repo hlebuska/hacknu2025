@@ -22,7 +22,7 @@ import { formatPostedDate } from "../../utils/date-formatter";
 export function VacancyInfoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [opened, { open }] = useDisclosure(false);
+  const [opened, { close, open }] = useDisclosure(false);
   const { widgetOpen, setWidgetOpen } = useWidget();
 
   const { data: job, isLoading, error } = useVacancy(id!);
@@ -66,6 +66,7 @@ export function VacancyInfoPage() {
         jobTitle={job.title}
         companyName={job.company}
         onSubmit={() => setWidgetOpen(true)}
+        vacancyId={job.id}
       />
       {widgetOpen && <Widget />}
       <Container
