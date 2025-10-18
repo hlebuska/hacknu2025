@@ -28,7 +28,7 @@ const applicationData = {
 };
 
 function App() {
-  return <Chatbot applicationContext={applicationData} />;
+  return <Chatbot applicationId={applicationData.id} />;
 }
 
 export default App;

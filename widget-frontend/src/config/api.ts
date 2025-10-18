@@ -7,7 +7,7 @@ export const apiConfig = {
   wsUrl: WS_URL,
   endpoints: {
     health: `${API_URL}/health`,
-    chatWs: `${WS_URL}/api/v1/chat/ws`,
+    chatWs: (applicationId: string) => `${WS_URL}/ws/chat/${applicationId}`,
   },
 };
 

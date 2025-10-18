@@ -8,28 +8,11 @@ import { useState, useEffect, useRef } from "react";
 import { apiConfig } from "../../../config/api";
 
 interface ChatbotProps {
-  conversationId?: string;
-  applicationId?: string;
-  vacancyId?: string;
-  sessionId?: string;
+  applicationId: string;
 }
 
-export function Chatbot({
-  conversationId,
-  applicationId,
-  vacancyId,
-  sessionId = "default",
-}: ChatbotProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content:
-        "Hello! I'm your AI recruitment assistant. I can help you understand how your qualifications match job requirements, answer questions about positions, or assist with interview preparation. How can I help you today?",
-      role: "assistant",
-      timestamp: new Date(),
-    },
-  ]);
-  const [loading, setLoading] = useState(false);
+export function Chatbot({ applicationId }: ChatbotProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -40,78 +23,44 @@ export function Chatbot({
     }
   }, [messages]);
 
-  // Initialize WebSocket connection
   useEffect(() => {
-    connectWebSocket();
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, [sessionId, conversationId]);
-
-  const connectWebSocket = () => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}${apiConfig.endpoints.chatWs}/${sessionId}`;
-
-    const ws = new WebSocket(wsUrl);
+    // Connect to WebSocket with application ID
+    const ws = new WebSocket(apiConfig.endpoints.chatWs(applicationId));
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("WebSocket connected");
-      // Send initial setup message
-      if (conversationId) {
-        ws.send(
-          JSON.stringify({
-            type: "setup",
-            conversation_id: conversationId,
-            application_id: applicationId,
-            vacancy_id: vacancyId,
-          })
-        );
-      }
+      console.log("WebSocket connected for application:", applicationId);
     };
 
     ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "connection") {
-          console.log("Successfully connected:", data);
-        } else if (data.type === "message") {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              content: data.content,
-              role: "assistant",
-              timestamp: new Date(),
-            },
-          ]);
-          setLoading(false);
-        } else if (data.type === "error") {
-          console.error("Chat error:", data.message);
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error("Error parsing WebSocket message:", e);
+      const responseText = event.data;
+      if (responseText !== "connected") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            content: responseText,
+            role: "assistant",
+            timestamp: new Date(),
+          },
+        ]);
       }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
-      setLoading(false);
     };
 
     ws.onclose = () => {
       console.log("WebSocket disconnected");
     };
-  };
 
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim()) return;
+    return () => {
+      ws.close();
+    };
+  }, [applicationId]);
 
-    // Add user message to chat
+  const handleSendMessage = (message: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -119,36 +68,18 @@ export function Chatbot({
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
-    setLoading(true);
 
-    try {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        // Send via WebSocket
-        wsRef.current.send(
-          JSON.stringify({
-            message,
-            conversation_id: conversationId,
-            application_id: applicationId,
-            vacancy_id: vacancyId,
-          })
-        );
-      } else {
-        throw new Error("WebSocket connection not available");
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          content:
-            "Sorry, I encountered an error processing your message. Please try again.",
-          role: "assistant",
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
-      setLoading(false);
+    const conversationHistory = [...messages, userMessage].map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      const payload = {
+        message: message,
+        history: conversationHistory,
+      };
+      wsRef.current.send(JSON.stringify(payload));
     }
   };
 
@@ -169,37 +100,20 @@ export function Chatbot({
       <ChatHeader />
 
       <ScrollArea
-        ref={scrollAreaRef}
         style={{
           flex: 1,
           backgroundColor: "#f8f9fa",
         }}
         viewportRef={scrollRef}
       >
-        <Box style={{ padding: "16px" }}>
+        <Box style={{ padding: "8px 0" }}>
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
-          {loading && (
-            <Box style={{ padding: "12px", textAlign: "center" }}>
-              <div
-                style={{
-                  display: "inline-block",
-                  padding: "8px 12px",
-                  backgroundColor: "#f1f3f5",
-                  borderRadius: "12px",
-                  color: "#666",
-                  fontSize: "14px",
-                }}
-              >
-                AI is thinking...
-              </div>
-            </Box>
-          )}
         </Box>
       </ScrollArea>
 
-      <ChatInput onSend={handleSendMessage} disabled={loading} />
+      <ChatInput onSend={handleSendMessage} />
     </Box>
   );
 }
