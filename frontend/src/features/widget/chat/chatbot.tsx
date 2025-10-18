@@ -133,7 +133,36 @@ export function Chatbot({
           })
         );
       } else {
-        throw new Error("WebSocket connection not available");
+        // Send via HTTP
+        const params = new URLSearchParams({
+          message,
+          ...(conversationId && { conversation_id: conversationId }),
+          ...(applicationId && { application_id: applicationId }),
+          ...(vacancyId && { vacancy_id: vacancyId }),
+        });
+
+        const response = await fetch(
+          `${apiConfig.baseUrl}${apiConfig.endpoints.chat}?${params}`,
+          {
+            method: "POST",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Chat error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            content: data.response,
+            role: "assistant",
+            timestamp: new Date(),
+          },
+        ]);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -169,7 +198,6 @@ export function Chatbot({
       <ChatHeader />
 
       <ScrollArea
-        ref={scrollAreaRef}
         style={{
           flex: 1,
           backgroundColor: "#f8f9fa",

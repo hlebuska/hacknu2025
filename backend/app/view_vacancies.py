@@ -20,7 +20,6 @@ async def view_vacancies():
         for i, vacancy in enumerate(vacancies, 1):
             print(f"[{i}] {vacancy.title}")
             print(f"    Company: {vacancy.company}")
-            print(f"    Location: {vacancy.location}")
             print(f"    Salary: {vacancy.salary_min:,} - {vacancy.salary_max:,} KZT")
             print(f"    Type: {vacancy.employment_type}")
             print(f"    ID: {vacancy.id}")
