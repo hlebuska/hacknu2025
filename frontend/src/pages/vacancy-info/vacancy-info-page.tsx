@@ -22,7 +22,7 @@ import { formatPostedDate } from "../../utils/date-formatter";
 export function VacancyInfoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [opened, { open, close }] = useDisclosure(false);
+  const [opened, { open }] = useDisclosure(false);
   const { widgetOpen, setWidgetOpen } = useWidget();
 
   const { data: job, isLoading, error } = useVacancy(id!);
@@ -30,6 +30,7 @@ export function VacancyInfoPage() {
   const handleBack = () => {
     navigate("/");
   };
+  console.log("Job Data:", opened);
 
   if (isLoading) {
     return (
