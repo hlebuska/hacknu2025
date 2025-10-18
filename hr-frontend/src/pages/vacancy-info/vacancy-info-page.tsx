@@ -26,11 +26,11 @@ import { formatPostedDate } from "../../utils/date-formatter";
 export function VacancyInfoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [opened, { open, close }] = useDisclosure(false);
+  const [opened, { open }] = useDisclosure(false);
 
   const { data: job, isLoading, error } = useVacancy(id!);
 
-  console.log("Job Data:", job);
+  console.log("Job Data:", opened);
   const handleBack = () => {
     navigate("/");
   };
