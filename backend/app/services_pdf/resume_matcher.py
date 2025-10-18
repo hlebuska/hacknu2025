@@ -81,7 +81,7 @@ async def match_resume_to_requirements(
     *,
     model: Optional[str] = None,
     temperature: float = 0.0,
-    max_tokens: int = 100000,
+    max_tokens: int = 600,
 ) -> Dict[str, Any] | Dict[str, str]:
     """
     Call OpenAI to compute matching sections and a fit score.
@@ -94,7 +94,15 @@ async def match_resume_to_requirements(
     client = settings.openai_client
     model_name = model or getattr(settings, "openai_model", "gpt-4o-mini")
 
-    messages = _build_messages(job_requirements, resume_text)
+    # Simple truncation to avoid overly long inputs. Adjust as needed.
+    # This is a character-based proxy; you can make this token-aware later.
+    def truncate(s: str, max_len: int) -> str:
+        return s if len(s) <= max_len else s[:max_len]
+
+    jr_trimmed = truncate(job_requirements, 6000)
+    rt_trimmed = truncate(resume_text, 12000)
+
+    messages = _build_messages(jr_trimmed, rt_trimmed)
     try:
         resp = client.chat.completions.create(
             model=model_name,
