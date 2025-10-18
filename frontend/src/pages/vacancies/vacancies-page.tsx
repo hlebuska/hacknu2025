@@ -79,7 +79,6 @@ export default function VacanciesPage() {
                   key={job.id}
                   title={job.title}
                   company={job.company}
-                  location={job.location}
                   employmentType={job.title}
                   salaryLow={job.salary_min}
                   salaryHigh={job.salary_max}

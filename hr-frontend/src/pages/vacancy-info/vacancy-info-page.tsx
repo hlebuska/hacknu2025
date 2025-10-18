@@ -95,12 +95,6 @@ export function VacancyInfoPage() {
                         {job.company}
                       </Text>
                     </Group>
-                    <Group gap="xs">
-                      <MapPin size={16} color="#767f8c" />
-                      <Text size="sm" c="#767f8c">
-                        {job.location}
-                      </Text>
-                    </Group>
                   </Group>
                 </Stack>
               </Group>

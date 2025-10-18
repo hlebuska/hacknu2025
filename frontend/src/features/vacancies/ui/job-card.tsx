@@ -14,7 +14,7 @@ import { MoveDiagonal, PinIcon } from "lucide-react";
 interface JobCardProps {
   title?: string;
   company?: string;
-  location?: string;
+
   employmentType?: string;
   salaryLow?: string;
   salaryHigh?: string;
@@ -26,7 +26,7 @@ interface JobCardProps {
 export function JobCard({
   title = "Front End Developer",
   company = "Mycar.kz",
-  location = "Dhaka, Bangladesh",
+
   employmentType = "Part-time",
   salaryLow,
   salaryHigh,
@@ -92,12 +92,6 @@ export function JobCard({
             <Text size="md" fw={500} c="#18191c">
               {company}
             </Text>
-            <Group gap={4}>
-              <PinIcon size={18} color="#767f8c" />
-              <Text size="sm" c="#767f8c">
-                {location}
-              </Text>
-            </Group>
           </Stack>
 
           <ActionIcon
