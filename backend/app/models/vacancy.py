@@ -14,7 +14,6 @@ class Vacancy(SQLModel, table=True):
     title: str = Field(index=True)
     description: str
     company: str
-    location: str
     salary_min: int
     salary_max: int
     employment_type: str = Field(default="Full-time")  # Full-time, Part-time, Contract, Internship
@@ -27,7 +26,6 @@ class VacancyCreate(SQLModel):
     title: str
     description: str
     company: str
-    location: str
     salary_min: int
     salary_max: int
     employment_type: str = "Full-time"
@@ -40,7 +38,6 @@ class VacancyRead(SQLModel):
     title: str
     description: str
     company: str
-    location: str
     salary_min: int
     salary_max: int
     employment_type: str
