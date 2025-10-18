@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlmodel import select, col
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,8 +22,29 @@ async def get_session():
     async with async_session() as session:
         yield session
 
+async def send_chat_notification(
+    application_id: str,
+    email: str,
+    first_name: str,
+    vacancy_title: str
+):
+    """Send notification to applicant with chat link"""
+    try:
+        chat_url = f"http://localhost:5173/chat/{application_id}"  # Update with your frontend URL
+        
+        logger.info(f"📧 Chat notification for {first_name} ({email})")
+        logger.info(f"🔗 Chat URL: {chat_url}")
+        logger.info(f"💼 Vacancy: {vacancy_title}")
+        
+        # TODO: Implement actual email sending here
+        # For now, just log the notification
+        
+    except Exception as e:
+        logger.error(f"Failed to send chat notification: {e}")
+
 @router.post("", response_model=ApplicationRead, status_code=201)
 async def submit_application(
+    background_tasks: BackgroundTasks,
     vacancy_id: str = Form(...),
     first_name: str = Form(...),
     last_name: str = Form(...),
@@ -122,6 +143,17 @@ async def submit_application(
                     await session.commit()
                     await session.refresh(application)
                     logger.info(f"✅ Resume analyzed: FIT_SCORE={score_val}")
+                    
+                    # Send chat notification if score is below threshold
+                    if score_val and score_val < 80:
+                        background_tasks.add_task(
+                            send_chat_notification,
+                            str(application.id),
+                            email,
+                            first_name,
+                            vacancy.title
+                        )
+                        logger.info(f"🤖 Chat notification queued for application {application.id}")
                 else:
                     logger.warning(f"Resume matching failed or invalid response: {result}")
             else:

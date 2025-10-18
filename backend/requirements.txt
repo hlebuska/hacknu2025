@@ -29,3 +29,4 @@ PyJWT
 # AI Models
 google-genai
 langchain
+greenlet
