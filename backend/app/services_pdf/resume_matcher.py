@@ -49,11 +49,16 @@ def _build_messages(job_requirements: str, resume_text: str) -> list[ChatComplet
     - Provide the single final integer score only; do NOT include the internal breakdown in the response.
 
     OUTPUT FORMAT (Required — exact JSON ONLY):
-    Return only a single JSON object with exactly two keys in this order:
-    {{
-        "MATCHING_SECTIONS": "[A single string containing the extracted resume snippets and short tags — keep reasonably concise]",
-        "FIT_SCORE": always 100
-    }}
+    for each requirement you need to return a json property that has the following fields:
+    
+    json open
+    vacancy_req: <job requirement string>,
+    user_req_data: <extracted matching resume sections>,
+    match_percent: <short tag describing the match>,
+    json close
+
+    in the end you need to have a json file with multiple such properties for all props from vacancy
+    
 
     IMPORTANT:
     - The model must output valid JSON only. No extra text, no surrounding backticks, and no explanatory notes.
@@ -91,7 +96,7 @@ async def match_resume_to_requirements(
     {
     vacancy_req: <job requirement string>,
     user_req_data: <extracted matching resume sections>,
-
+    match_percent: <short tag describing the match>,
 
     }
 
