@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router";
 import { getVacancies } from "../../features/vacancies/api/vacancies-api";
-import { Header } from "../../features/vacancies/components/header";
-import { JobCard } from "../../features/vacancies/components/job-card";
 import type { Job } from "../../features/vacancies/model/types";
+import { Header } from "../../features/vacancies/ui/header";
+import { JobCard } from "../../features/vacancies/ui/job-card";
 
 export default function VacanciesPage() {
   const navigate = useNavigate();
@@ -33,17 +33,6 @@ export default function VacanciesPage() {
         <Header />
 
         <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h1 className="mb-4 text-5xl font-bold tracking-tight text-foreground">
-              Find Your Next Opportunity
-            </h1>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
-              Discover amazing career opportunities at leading tech companies.
-              Browse our curated list of positions and take the next step in
-              your career.
-            </p>
-          </div>
-
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">
               Latest Positions
