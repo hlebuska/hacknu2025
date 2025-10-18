@@ -169,6 +169,7 @@ export function Chatbot({
       <ChatHeader />
 
       <ScrollArea
+        ref={scrollAreaRef}
         style={{
           flex: 1,
           backgroundColor: "#f8f9fa",
