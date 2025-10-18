@@ -7,16 +7,39 @@ import { ChatHeader } from "./chat-header";
 import { useState, useEffect, useRef } from "react";
 import { apiConfig } from "../../../config/api";
 
-export function Chatbot() {
+interface ChatbotProps {
+  applicationContext?: {
+    id: string;
+    vacancy_id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    resume_pdf: string;
+    matching_score: number;
+    matching_sections: {
+      requirements: Array<{
+        vacancy_req: string;
+        user_req_data: string;
+        match_percent: number;
+      }>;
+      FIT_SCORE: number;
+    };
+  };
+}
+
+export function Chatbot({ applicationContext }: ChatbotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! How can I help you today?",
+      content: applicationContext
+        ? `Hello ${applicationContext.first_name}! I'm here to help clarify your application. I can see your matching score is ${applicationContext.matching_score}%. Let me ask you a few questions to better understand your qualifications.`
+        : "Hello! How can I help you today?",
       role: "assistant",
       timestamp: new Date(),
     },
   ]);
   const wsRef = useRef<WebSocket | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Connect to WebSocket
@@ -25,6 +48,16 @@ export function Chatbot() {
 
     ws.onopen = () => {
       console.log("WebSocket connected");
+
+      // Send initial context if available
+      if (applicationContext && ws.readyState === WebSocket.OPEN) {
+        const initialPayload = {
+          message: "Initialize conversation with application context",
+          history: [],
+          context: applicationContext,
+        };
+        ws.send(JSON.stringify(initialPayload));
+      }
     };
 
     ws.onmessage = (event) => {
@@ -34,7 +67,7 @@ export function Chatbot() {
           ...prev,
           {
             id: Date.now().toString(),
-            content: responseText.replace("echo: ", ""),
+            content: responseText,
             role: "assistant",
             timestamp: new Date(),
           },
@@ -53,7 +86,19 @@ export function Chatbot() {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [applicationContext]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
+    }
+  }, [messages]);
 
   const handleSendMessage = (message: string) => {
     // Add user message to chat
@@ -65,9 +110,22 @@ export function Chatbot() {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    // Send message via WebSocket
+    // Prepare message history (excluding the initial greeting)
+    const conversationHistory = [...messages, userMessage]
+      .filter((msg) => msg.id !== "1") // Exclude initial greeting
+      .map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+    // Send message with history and context via WebSocket
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(message);
+      const payload = {
+        message: message,
+        history: conversationHistory,
+        context: applicationContext,
+      };
+      wsRef.current.send(JSON.stringify(payload));
     } else {
       console.error("WebSocket is not connected");
     }
@@ -91,6 +149,7 @@ export function Chatbot() {
       <ChatHeader />
 
       <ScrollArea
+        ref={scrollAreaRef}
         style={{
           flex: 1,
           backgroundColor: "#f8f9fa",
