@@ -150,9 +150,7 @@ export function VacancyInfoPage() {
                 >
                   Apply Now
                 </Button>
-                <Text size="sm" c="#767f8c">
-                  {job.requirements} experience required
-                </Text>
+                <Text size="sm" c="#767f8c"></Text>
               </Group>
             </Stack>
           </Card>
@@ -176,9 +174,11 @@ export function VacancyInfoPage() {
                   <Text size="lg" fw={600} c="#18191c">
                     Job Description
                   </Text>
-                  <Text size="sm" c="#4f4f4f" style={{ lineHeight: 1.6 }}>
-                    {job.description}
-                  </Text>
+                  <Text
+                    size="sm"
+                    c="#4f4f4f"
+                    style={{ lineHeight: 1.6 }}
+                  ></Text>
                 </Stack>
               </Card>
 
@@ -193,9 +193,7 @@ export function VacancyInfoPage() {
                       display: "grid",
                       gap: "0.5rem",
                     }}
-                  >
-                    {job.requirements}
-                  </div>
+                  ></div>
                 </Stack>
               </Card>
             </div>
@@ -243,9 +241,7 @@ export function VacancyInfoPage() {
                       <Text size="sm" fw={500} c="#18191c">
                         Requirements
                       </Text>
-                      <Text size="sm" c="#767f8c">
-                        {job.requirements}
-                      </Text>
+                      <Text size="sm" c="#767f8c"></Text>
                     </div>
 
                     <div style={{ display: "grid", gap: "0.25rem" }}>
