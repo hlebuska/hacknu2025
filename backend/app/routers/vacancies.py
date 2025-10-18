@@ -16,7 +16,6 @@ async def get_session():
 async def get_vacancies(
     skip: int = 0,
     limit: int = 100,
-    location: Optional[str] = None,
     employment_type: Optional[str] = None,
     session: AsyncSession = Depends(get_session)
 ):
@@ -25,13 +24,9 @@ async def get_vacancies(
     
     - **skip**: Number of records to skip (pagination)
     - **limit**: Maximum number of records to return
-    - **location**: Filter by location
     - **employment_type**: Filter by employment type (Full-time, Part-time, etc.)
     """
     query = select(Vacancy)
-    
-    if location:
-        query = query.where(col(Vacancy.location).ilike(f"%{location}%"))
     
     if employment_type:
         query = query.where(Vacancy.employment_type == employment_type)
@@ -105,8 +100,8 @@ async def update_vacancy(
     for key, value in vacancy_data.model_dump().items():
         setattr(vacancy, key, value)
     
-    from datetime import datetime, timezone
-    vacancy.updated_at = datetime.now(timezone.utc)
+    from datetime import datetime
+    vacancy.updated_at = datetime.utcnow()
     
     await session.commit()
     await session.refresh(vacancy)

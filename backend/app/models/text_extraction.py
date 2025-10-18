@@ -2,8 +2,6 @@ import os
 from google import genai
 from google.genai import types
 
-
-
 def parse_resume_with_requirements_gemini(job_requirements, resume_text):
     """
     Parses a resume against job requirements using the official Gemini API SDK.
@@ -34,7 +32,7 @@ def parse_resume_with_requirements_gemini(job_requirements, resume_text):
 
     # Configuration for the API call
     generation_config = types.GenerateContentConfig(
-        max_output_tokens=500,
+        max_output_tokens=100000,
         temperature=0.7,
     )
 

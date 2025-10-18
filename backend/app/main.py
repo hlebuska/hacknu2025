@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from contextlib import asynccontextmanager
 from app.routers import chat
 from app.routers import vacancies, applications
@@ -40,6 +42,12 @@ app.include_router(applications.router)
 
 # Initialize PDF request service
 pdf_request_service = PDFRequestService()
+
+# Serve uploaded resumes statically under /files
+# Ensure directory exists before mounting
+uploads_dir = Path("uploads/resumes")
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/files", StaticFiles(directory=str(uploads_dir)), name="files")
 
 @app.get("/")
 async def root():

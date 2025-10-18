@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Column
-from sqlalchemy import JSON
+from sqlalchemy import JSON, TIMESTAMP
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
@@ -19,8 +19,8 @@ class Application(SQLModel, table=True):
     resume_parsed: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))  # Parsed resume data
     matching_score: Optional[float] = None  # AI-calculated fit score (0-100)
     matching_sections: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))  # AI-extracted relevant sections
-    created_at: datetime = Field(default_factory=utc_now)
-    updated_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(default_factory=utc_now, sa_column=Column(TIMESTAMP(timezone=True)))
+    updated_at: datetime = Field(default_factory=utc_now, sa_column=Column(TIMESTAMP(timezone=True)))
 
 class ApplicationCreate(SQLModel):
     """Schema for creating a new application"""
