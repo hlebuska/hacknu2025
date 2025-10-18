@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlmodel import select, col
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
@@ -6,6 +7,7 @@ from app.models.application import Application, ApplicationCreate, ApplicationRe
 from app.models.vacancy import Vacancy
 from app.db.session import async_session
 from app.utils.file_upload import save_uploaded_file
+from pathlib import Path
 
 router = APIRouter(prefix="/api/applications", tags=["Applications"])
 
@@ -109,5 +111,34 @@ async def get_application(
         raise HTTPException(status_code=404, detail="Application not found")
     
     return application
+
+@router.get("/{application_id}/resume")
+async def download_application_resume(
+    application_id: str,
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Download the resume PDF for a specific application.
+    """
+    result = await session.execute(
+        select(Application).where(Application.id == application_id)
+    )
+    application = result.scalar_one_or_none()
+
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    if not application.resume_pdf:
+        raise HTTPException(status_code=404, detail="No resume file associated with this application")
+
+    file_path = Path(application.resume_pdf)
+    if not file_path.exists() or not file_path.is_file():
+        # Try resolving relative to current working dir
+        alt_path = Path.cwd() / application.resume_pdf
+        if not alt_path.exists() or not alt_path.is_file():
+            raise HTTPException(status_code=404, detail="Resume file not found on server")
+        file_path = alt_path
+
+    return FileResponse(path=str(file_path), media_type="application/pdf", filename=file_path.name)
 
 
