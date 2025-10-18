@@ -13,6 +13,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import {
+  ArrowLeft,
   Briefcase,
   Building2,
   DollarSign,
@@ -23,6 +24,7 @@ import {
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useCreateVacancy } from "../../features/vacancies/api/use-create-vacancy";
+import { useNavigate } from "react-router";
 
 const vacancySchema = z.object({
   title: z.string().min(3).max(100),
@@ -93,8 +95,22 @@ export default function CreateVacancyPage() {
     });
   };
 
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate("/");
+  };
+
   return (
     <Container size="md" py="xl">
+      <Group>
+        <ActionIcon variant="subtle" size="lg" onClick={handleBack}>
+          <ArrowLeft size={20} />
+        </ActionIcon>
+        <Text size="sm" c="dimmed">
+          Back to Jobs
+        </Text>
+      </Group>
       <Stack gap="lg">
         <div>
           <Text size="xl" fw={700}>
