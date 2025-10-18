@@ -56,6 +56,8 @@ def _build_messages(job_requirements: str, resume_text: str) -> list[ChatComplet
     * "match_percent": percentage match for this requirement (0-100 integer)
     - "FIT_SCORE": overall fit score (0-100 integer)
 
+    You can internally calculate the experince based on current date (oct 2025) and the dates mentioned in the resume.
+
     Example structure:
     {{
     "requirements": [
