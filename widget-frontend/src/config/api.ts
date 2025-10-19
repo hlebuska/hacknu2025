@@ -6,8 +6,8 @@ export const apiConfig = {
   baseUrl: API_URL,
   wsUrl: WS_URL,
   endpoints: {
-    chat: `${API_URL}/api/chat`,
-    chatWs: (applicationId: string) => `${WS_URL}/ws/chat/${applicationId}`,
+    health: `${API_URL}/health`,
+    chatWs: (sessionId: string) => `${WS_URL}/api/v1/chat/ws/${sessionId}`,
   },
 };
 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,25 +7,15 @@ from contextlib import asynccontextmanager
 from app.routers import chat
 from app.routers import vacancies, applications
 from app.tasks.jobs import broker
-from app.db.session import init_db, engine, async_session
+from app.db.session import init_db, engine
 from taskiq import TaskiqScheduler
-from sqlmodel import SQLModel, select
+from sqlmodel import SQLModel
 import asyncio
 import os
-import json
-from openai import OpenAI
-from typing import Optional
 
 from app.config.settings import settings
 from app.backend_models.response import PDFAnalysisResponse
 from app.services_pdf.pdf_request import PDFRequestService
-from app.models.application import Application
-
-# Initialize OpenAI client
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Store clarifications per session
-clarifications_store = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -54,183 +44,10 @@ app.include_router(applications.router)
 pdf_request_service = PDFRequestService()
 
 # Serve uploaded resumes statically under /files
+# Ensure directory exists before mounting
 uploads_dir = Path("uploads/resumes")
 uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/files", StaticFiles(directory=str(uploads_dir)), name="files")
-
-# WebSocket endpoint for chat
-@app.websocket("/ws/chat/{application_id}")
-async def websocket_chat_endpoint(websocket: WebSocket, application_id: str):
-    await websocket.accept()
-    
-    # Send JSON response with "connected" status
-    await websocket.send_json({"type": "status", "message": "connected"})
-    
-    # Fetch application from database
-    async with async_session() as session:
-        result = await session.execute(
-            select(Application).where(Application.id == application_id)
-        )
-        application = result.scalar_one_or_none()
-        
-        if not application:
-            await websocket.send_json({
-                "type": "error",
-                "message": "Application not found"
-            })
-            await websocket.close()
-            return
-        
-        context = {
-            "id": str(application.id),
-            "first_name": application.first_name,
-            "last_name": application.last_name,
-            "email": application.email,
-            "matching_score": application.matching_score,
-            "matching_sections": application.matching_sections or {}
-        }
-    
-    # Initialize session
-    session_id = id(websocket)
-    requirements = context.get("matching_sections", {}).get("requirements", [])
-    clarifications_store[session_id] = {
-        "application_id": application_id,
-        "current_question_index": 0,
-        "clarifications": [],
-        "requirements": requirements,
-        "context": context
-    }
-    
-    # Send initial greeting
-    initial_message = f"Hello {context['first_name']}! I'm here to help clarify your application. Your current matching score is {context['matching_score']}%. Let me ask you a few questions."
-    await websocket.send_json({
-        "type": "message",
-        "role": "assistant",
-        "content": initial_message
-    })
-    
-    try:
-        while True:
-            data = await websocket.receive_text()
-            
-            try:
-                payload = json.loads(data)
-                message = payload.get("message", "")
-                history = payload.get("history", [])
-                
-                session_data = clarifications_store[session_id]
-                requirements = session_data["requirements"]
-                current_index = session_data["current_question_index"]
-                
-                # Get unresolved requirements (match < 80%)
-                unresolved = [req for req in requirements if req.get('match_percent', 0) < 80]
-                
-                # Store clarification if user provided an answer
-                if len(history) > 0 and history[-1]["role"] == "user":
-                    if current_index < len(unresolved):
-                        current_req = unresolved[current_index]
-                        session_data["clarifications"].append({
-                            "requirement": current_req.get('vacancy_req', ''),
-                            "original_data": current_req.get('user_req_data', ''),
-                            "clarification": message,
-                            "original_match": current_req.get('match_percent', 0)
-                        })
-                        session_data["current_question_index"] += 1
-                        current_index = session_data["current_question_index"]
-                
-                # Prepare system message
-                if requirements and unresolved:
-                    if current_index < len(unresolved):
-                        current_req = unresolved[current_index]
-                        just_answered = (len(history) > 0 and history[-1]["role"] == "user")
-                        
-                        if just_answered and current_index > 0:
-                            system_message = f"""You are an HR assistant. The user just answered a question.
-                            
-Now ask about this next requirement:
-- Requirement: {current_req.get('vacancy_req', '')}
-- Current info: {current_req.get('user_req_data', '')}
-
-Rules:
-1. Start with "Got it." or "Thanks."
-2. Immediately ask the next question
-3. Keep total response under 25 words
-4. Be direct and professional
-"""
-                        else:
-                            system_message = f"""You are an HR assistant. Ask ONE short question to clarify this requirement.
-
-Requirement to clarify:
-- {current_req.get('vacancy_req', '')}
-- Current data: {current_req.get('user_req_data', '')}
-
-Rules:
-1. Ask ONE specific question
-2. Keep it under 20 words
-3. Be direct and professional
-"""
-                    else:
-                        # All questions answered - save to database
-                        async with async_session() as db_session:
-                            result = await db_session.execute(
-                                select(Application).where(Application.id == application_id)
-                            )
-                            app = result.scalar_one_or_none()
-                            if app:
-                                if not app.matching_sections:
-                                    app.matching_sections = {}
-                                app.matching_sections["clarifications"] = session_data["clarifications"]
-                                db_session.add(app)
-                                await db_session.commit()
-                        
-                        system_message = f"""You are an HR assistant wrapping up.
-
-All requirements have been clarified. 
-Thank the applicant briefly (under 15 words) and let them know their application will be reviewed.
-"""
-                else:
-                    system_message = "You are a helpful assistant. Keep responses under 20 words."
-                
-                # Prepare messages for OpenAI
-                messages = [{"role": "system", "content": system_message}]
-                recent_history = history[-2:] if len(history) > 2 else history
-                for msg in recent_history:
-                    messages.append({
-                        "role": msg["role"],
-                        "content": msg["content"]
-                    })
-                
-                # Call OpenAI API
-                response = openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=messages,
-                    temperature=0.5,
-                    max_tokens=100
-                )
-                
-                ai_response = response.choices[0].message.content
-                
-                # Send JSON response
-                await websocket.send_json({
-                    "type": "message",
-                    "role": "assistant",
-                    "content": ai_response
-                })
-                
-            except json.JSONDecodeError:
-                await websocket.send_json({
-                    "type": "error",
-                    "message": "Invalid format"
-                })
-            except Exception as e:
-                await websocket.send_json({
-                    "type": "error",
-                    "message": f"Error: {str(e)}"
-                })
-                
-    except WebSocketDisconnect:
-        if session_id in clarifications_store:
-            del clarifications_store[session_id]
 
 @app.get("/")
 async def root():
@@ -241,7 +58,6 @@ async def root():
             "health": "/health",
             "analyze_pdf": "/api/v1/analyze-pdf (PDF → AI analysis)",
             "parse_pdf": "/api/v1/parse-pdf (PDF → text extraction only)",
-            "websocket_chat": "/ws/chat/{application_id}",
             "docs": "/docs",
         }
     }
