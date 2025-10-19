@@ -40,7 +40,7 @@ export function Chatbot({
     }
   }, [messages]);
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connon
   useEffect(() => {
     connectWebSocket();
     return () => {
